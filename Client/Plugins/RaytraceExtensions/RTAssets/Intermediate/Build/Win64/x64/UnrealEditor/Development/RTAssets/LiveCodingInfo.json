@@ -1,0 +1,15 @@
+{
+	"RemapUnityFiles": 
+	{
+		"Module.RTAssets.cpp.obj": [
+			"RaytracedAO.gen.cpp.obj",
+			"RaytracedBevel.gen.cpp.obj",
+			"RaytracedTexture.gen.cpp.obj",
+			"RTAssets.init.gen.cpp.obj",
+			"RayTracedAO.cpp.obj",
+			"RaytracedBevel.cpp.obj",
+			"RaytracedTexture.cpp.obj",
+			"RTAssets.cpp.obj"
+		]
+	}
+}

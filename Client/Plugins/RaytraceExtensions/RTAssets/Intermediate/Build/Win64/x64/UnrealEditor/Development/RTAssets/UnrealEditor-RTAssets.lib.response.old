@@ -1,0 +1,12 @@
+/NOLOGO
+/errorReport:prompt
+/MACHINE:x64
+/SUBSYSTEM:WINDOWS
+/DEF
+/NAME:"UnrealEditor-RTAssets.dll"
+/IGNORE:4221
+/NODEFAULTLIB
+"E:\UnrealProjects\Raytraced\Intermediate\Build\Win64\x64\RaytracedEditor\Development\Engine\SharedPCH.Engine.ShadowErrors.InclOrderUnreal5_1.h.obj"
+"E:\UnrealProjects\Raytraced\Plugins\RaytraceExtensions\RTAssets\Intermediate\Build\Win64\x64\UnrealEditor\Development\RTAssets\Module.RTAssets.cpp.obj"
+"E:\UnrealProjects\Raytraced\Plugins\RaytraceExtensions\RTAssets\Intermediate\Build\Win64\x64\UnrealEditor\Development\RTAssets\Default.rc2.res"
+/OUT:"E:\UnrealProjects\Raytraced\Plugins\RaytraceExtensions\RTAssets\Intermediate\Build\Win64\x64\UnrealEditor\Development\RTAssets\UnrealEditor-RTAssets.lib"

@@ -1,0 +1,12 @@
+/NOLOGO
+/errorReport:prompt
+/MACHINE:x64
+/SUBSYSTEM:WINDOWS
+/DEF
+/NAME:"UnrealEditor-RTEditor.dll"
+/IGNORE:4221
+/NODEFAULTLIB
+"E:\UnrealProjects\Raytraced\Intermediate\Build\Win64\x64\RaytracedEditor\Development\UnrealEd\SharedPCH.UnrealEd.ShadowErrors.h.obj"
+"E:\UnrealProjects\Raytraced\Plugins\RaytraceExtensions\RTEditor\Intermediate\Build\Win64\x64\UnrealEditor\Development\RTEditor\Module.RTEditor.cpp.obj"
+"E:\UnrealProjects\Raytraced\Plugins\RaytraceExtensions\RTEditor\Intermediate\Build\Win64\x64\UnrealEditor\Development\RTEditor\Default.rc2.res"
+/OUT:"E:\UnrealProjects\Raytraced\Plugins\RaytraceExtensions\RTEditor\Intermediate\Build\Win64\x64\UnrealEditor\Development\RTEditor\UnrealEditor-RTEditor.lib"

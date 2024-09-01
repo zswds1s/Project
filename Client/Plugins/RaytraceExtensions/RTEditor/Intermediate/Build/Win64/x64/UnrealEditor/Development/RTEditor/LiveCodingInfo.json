@@ -1,0 +1,11 @@
+{
+	"RemapUnityFiles": 
+	{
+		"Module.RTEditor.cpp.obj": [
+			"RaytracedAssetFactory.gen.cpp.obj",
+			"RTEditor.init.gen.cpp.obj",
+			"RaytracedAssetFactory.cpp.obj",
+			"RTEditor.cpp.obj"
+		]
+	}
+}

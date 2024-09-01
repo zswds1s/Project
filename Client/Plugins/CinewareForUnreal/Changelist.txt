@@ -1,0 +1,79 @@
+=== CinewareForUnreal Changelist ===
+
+== Changes for 2024.5.13 ==
+* In the geometry cache dialog, 
+        - The button "ALL" will not select lights and camera
+        - Nes icons for objects that cannot be converted to GeometryCache
+        - Custom icons should be displayed correctly
+
+* Fixed an issue with roughtness texture
+* Fixed an issue with objects inside a disabled Subdivision Surface not being imported
+* Progression bar will display more information about the loading process
+* Fixed an issue with animation precision
+
+== Changes for 2024.4.12 ==
+Bugfixes:
+* Fixed an Issue with the simulation cached as alembic files not being imported.
+
+== Changes for 2024.4.11 ==
+Bugfixes:
+* Fixed a bug where alpha channel was only using alpha channel.
+* Fixed a bug where reflection were set to default when the material was set to 1.0
+* Fixed a bug with keys being interpolated where they should not.
+* Added weight map support for reflection
+
+== Changes for 2024.3.10 ==
+Features:
+* Light intensity scale option
+* Camera ISO scale option
+
+Bugfixes:
+* Fixed transform where the scale has negative values
+* Fixed a crash caused by specific meshes
+* Fixed a crash caused by some large GeometryCaches
+
+
+=== Changelist of previous versions ===
+
+== Changes for 2024.2.9 ==
+The versioning schema has changed. The first two numbers is the corresponding Cinema 4D release. The last number is the incrementing version of this plugin.
+
+Features:
+* Reference Material for subsurface scattering
+* Node material texture resize options ('Always', 'Off', 'Don't Enlarge')
+Bugfixes:
+* Fixed missing bump texture in standard material
+* Fixed wrong metallness in RS materials with non-metallness fresnel type
+
+== Changes for 0.2024.8 ==
+Features:
+* Built for Cinema 2024
+
+== Changes for 0.2023.8 ==
+Features:
+* Support for Redshift cameras and lights
+* Option to import only selected objects
+* Option to import a custom frame range
+* Localization for japanese, korean and simplified chinese
+Bugfixes:
+* Lights and cameras are now disabled in the GeometryCache selection dialog
+* Fixed a crash when importing identical polygon objects as GeometryCaches
+
+== Changes for 0.2023.7 ==
+Features:
+* Redshift materials rudimentary support (no displacement, no subsurface, no baking)
+* Similar Editor viewport camera placement as in Cinema
+* Options for GeometryCache LevelSequences
+* GeometryCache LevelSequences land now in the Animations subfolder
+Bugfixes:
+* Many crash fixes
+* Material with no selection appears only on the first selection tag
+* Subdivision not imported as StaticMesh
+* Added Source folder to be able to compile C++ Projects (as local project plugin)
+* GeometryCaches have unassigned materials
+* Missing animation tracks
+* Voronoi Point Generator parameters in take not imported to CinewareAsset (all take overrides of the main take are imported)
+* Voronoi fragments flicker when animation is played
+* GeometryCache animation only starting at frame 0 (animation ranged fixed for PSR as well)
+* GeometryCache Extrude polygon flicker
+* "Plain" scales in wrong coordinates

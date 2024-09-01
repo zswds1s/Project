@@ -1,0 +1,435 @@
+﻿#include "/Engine/Public/Platform.ush"
+#include "/Engine/Private/Common.ush"
+#include "/Engine/Private/MonteCarlo.ush"
+#include "/Engine/Private/SphericalGaussian.ush"
+#if !COMPUTESHADER || PLATFORM_SUPPORTS_INLINE_RAY_TRACING
+#include "/Engine/Private/RayTracing/RayTracingCommon.ush"
+#include "/Engine/Private/RayTracing/RayTracingHitGroupCommon.ush"
+#endif
+#include "/Engine/Private/PathTracing/Utilities/PathTracingRandomSequence.ush"
+
+float4x4 LocalToWorld;
+float4x4 LocalToWorldInverseTranspose;
+float4x4 VPMatrix;
+void DrawPrimitiveVS
+(
+	in float3 Vertex : ATTRIBUTE0,
+	HALF4_TYPE TangentX : ATTRIBUTE1,
+	HALF4_TYPE TangentZ : ATTRIBUTE2,	
+	out float3 OutNormal : TEXCOORD0,	
+	out float4 Output : SV_POSITION
+)
+{
+    float3 WorldPos = mul(float4(Vertex, 1.0), LocalToWorld).xyz;
+	OutNormal = normalize(mul(TangentZ.xyz, (float3x3)LocalToWorldInverseTranspose));
+    Output = mul(float4(WorldPos, 1.0), VPMatrix);
+}
+
+void DrawPrimitivePS
+(
+	in float3 Normal : TEXCOORD0,
+	in float4 SVPosition : SV_POSITION,
+	out float4 OutNormal : SV_Target0
+)
+{
+    OutNormal = float4(Normal,1.0);
+}
+
+
+
+
+uint Frame;
+uint2 Resolution;
+float MaxAngle;
+float Roundness;
+float Radius;
+uint NumSamples;
+Texture2D<float2> DepthStencilSRV;
+float4x4 SVPositionToTranslatedWorld;
+float4 InvDeviceZToWorldZTransform;
+
+float DeviceZ2SceneDepth(float DeviceZ)
+{
+	return DeviceZ * InvDeviceZToWorldZTransform.x + InvDeviceZToWorldZTransform.y + 1.0f / (DeviceZ * InvDeviceZToWorldZTransform.z - InvDeviceZToWorldZTransform.w);
+}
+
+float3 ConstructTranslatedWorldPositionFromDeviceZ(uint2 PixelCoord, float DeviceZ)
+{
+	float4 TranslatedWorldPosition = mul(float4(PixelCoord + 0.5, DeviceZ, 1), SVPositionToTranslatedWorld);
+	TranslatedWorldPosition.xyz /= TranslatedWorldPosition.w;
+	return TranslatedWorldPosition.xyz;
+}
+
+void make_orthonormals(float3 N, out float3 T, out float3 B)
+{
+	if (N.x != N.y || N.x != N.z)
+		T = float3(N.z - N.y, N.x - N.z, N.y - N.x); 
+	else
+		T = float3(N.z - N.y, N.x + N.z, -N.y - N.x); 
+
+	T = normalize(T);
+	B = cross(N, T);
+}
+
+float bevel_cubic_quintic_root_find(float xi) 
+{
+	const float tolerance = 1e-4f;
+	const int max_iteration_count = 10;
+	float x = 0.25f;
+
+	for (int i = 0; i < max_iteration_count; i++) 
+	{
+		float x2 = x * x;
+		float x3 = x2 * x;
+		float nx = 1.0f - x;
+
+		float f = 10.0f * x2 - 20.0f * x3 + 15.0f * x2 * x2 - 4.0f * x2 * x3 - xi;
+		float f_ = 20.0f * (x * nx) * (nx * nx);
+
+		if (abs(f) < tolerance || f_ == 0.0f) 
+		{
+			break;
+		}
+
+		x = saturate(x - f / f_);
+	}
+
+	return x;
+}
+
+void bevel_cubic_sample(float radius, float xi, out float r, out float h) 
+{
+	float Rm = radius;
+	float r_ = bevel_cubic_quintic_root_find(xi);
+
+	r_ *= Rm;
+	r = r_;
+
+	h = sqrt(Rm * Rm - r_ * r_);
+}
+
+float bevel_cubic_eval(const float radius, float r)
+{
+  const float Rm = radius;
+
+  if (r >= Rm) {
+    return 0.0;
+  }
+
+  float Rm5 = (Rm * Rm) * (Rm * Rm) * Rm;
+  float f = Rm - r;
+  float num = f * f * f;
+
+  return (10.0f * num) / (Rm5 * PI);
+}
+
+#if !COMPUTESHADER || PLATFORM_SUPPORTS_INLINE_RAY_TRACING
+struct FBevelPayload : FMinimalPayload
+{
+	float2 Barycentrics;
+	uint3 Indices;
+};
+#endif
+
+Buffer<SNORM float4> TangentsBuffer;
+
+#if BEVEL_PACKED_NORMAL
+float3 GetNormal(float2 Barycentrics, uint3 Indices)
+{
+	float3 normal_0 = TangentsBuffer[2 * Indices.x + 1].xyz;
+	float3 normal_1 = TangentsBuffer[2 * Indices.y + 1].xyz;
+	float3 normal_2 = TangentsBuffer[2 * Indices.z + 1].xyz;
+
+	float3 normal = (1.0f - Barycentrics.x - Barycentrics.y) * normal_0
+		+ Barycentrics.x * normal_1
+		+ Barycentrics.y * normal_2;
+
+	normal = normalize(mul(normal, (float3x3)LocalToWorldInverseTranspose));
+	return normal;
+}
+#else
+float3 GetNormal(float2 Barycentrics, uint3 Indices)
+{
+	float3 normal_0 = TangentsBuffer[Indices.x].xyz;
+	float3 normal_1 = TangentsBuffer[Indices.y].xyz;
+	float3 normal_2 = TangentsBuffer[Indices.z ].xyz;
+
+	float3 normal = (1.0f - Barycentrics.x - Barycentrics.y) * normal_0
+		+ Barycentrics.x * normal_1
+		+ Barycentrics.y * normal_2;
+
+	normal = normalize(mul(normal, (float3x3)LocalToWorldInverseTranspose));
+	return normal;
+}
+#endif
+
+Texture2D SceneNormalSRV;
+
+RWTexture2D<float4> RWBevelNormal;
+
+#if !COMPUTESHADER || PLATFORM_SUPPORTS_INLINE_RAY_TRACING
+RaytracingAccelerationStructure TLAS;
+RAY_TRACING_ENTRY_RAYGEN(BevelNormalRGS)
+{
+	const uint2 PixelCoord = DispatchRaysIndex().xy;
+	const float DeviceZ = DepthStencilSRV.Load(int3(PixelCoord, 0)).r;
+	const float3 WorldNormal = SceneNormalSRV.Load(uint3(PixelCoord,0)).xyz;
+	if (DeviceZ > 0.0 && (length(WorldNormal)>0.0))
+	{
+		const float3 TranslatedWorldPosition = ConstructTranslatedWorldPositionFromDeviceZ(PixelCoord, DeviceZ);
+
+		uint TileID = 0, HilbertState = 0;
+		for (int i = 7; i >= 0; i--) 
+		{
+			uint xi = (PixelCoord.x >> i) & 1;
+			uint yi = (PixelCoord.y >> i) & 1;
+			uint Row = 8 * HilbertState + 4 * xi + 2 * yi;
+			TileID = TileID * 4 + ((0x361E9CB4u >> Row) & 3);
+			HilbertState = (0x8FE65831u >> Row) & 3;
+		}
+
+		float3 sum_normal = 0;
+		float num_normals = 0;
+		for (uint SampleIndex = 0; SampleIndex < NumSamples; ++SampleIndex)
+		{
+			RandomSequence RandSequence;
+			RandSequence.SampleIndex = reversebits((65536 * Frame + TileID) * NumSamples + SampleIndex);
+			RandSequence.SampleSeed  = 0;
+
+			float2 rand_disk = SobolSampler(RandSequence.SampleIndex, RandSequence.SampleSeed).xy;
+
+			float3 disk_N = WorldNormal;
+			float3 disk_T;
+			float3 disk_B;
+			make_orthonormals(disk_N, disk_T, disk_B);
+
+			float axisu = rand_disk.x;
+			float axisv = rand_disk.y;
+
+			if (axisu < 0.5) 
+			{
+			  rand_disk.x *= 2.0;
+			}
+			else if (axisu < 0.75) 
+			{
+			  float3 tmp = disk_N;
+			  disk_N = disk_T;
+			  disk_T = tmp;
+
+			  rand_disk.x = (rand_disk.x - 0.5) * 4.0;
+			}
+			else 
+			{
+			  float3 tmp = disk_N;
+			  disk_N = disk_B;
+			  disk_B = tmp;
+
+			  rand_disk.x = (rand_disk.x - 0.75) * 4.0;
+			}
+			
+			if(axisv<0.5)
+				disk_N = -disk_N;
+
+			float radius = Radius * 1.5;
+			float phi = 2.0 * PI * rand_disk.x;
+			float disk_r = rand_disk.y;
+			float disk_height;
+			bevel_cubic_sample(radius, disk_r, disk_r, disk_height);
+
+			float3 disk_P = (disk_r * cos(phi)) * disk_T + (disk_r * sin(phi)) * disk_B;
+		
+			float3 TraceOrigin = TranslatedWorldPosition + (disk_N * disk_height + disk_P);
+			float3 TraceDirection = -disk_N;
+			float TraceLength = 2.0f * disk_height;
+
+			uint numHits = 2;
+			for (uint HitIndex = 0; HitIndex < numHits; HitIndex++)
+			{
+				RayDesc Ray;
+				Ray.Origin = TraceOrigin;
+				Ray.Direction = TraceDirection;
+				Ray.TMin = 0.0;
+				Ray.TMax = TraceLength;
+				
+				FBevelPayload BevelPayload = (FBevelPayload)0;
+				BevelPayload.SetMiss();
+
+				TraceRay(
+				TLAS,
+				RAY_FLAG_FORCE_OPAQUE | RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH,
+				RAY_TRACING_MASK_OPAQUE,
+				RAY_TRACING_SHADER_SLOT_MATERIAL,
+				RAY_TRACING_NUM_SHADER_SLOTS,
+				0,
+				Ray,
+				BevelPayload);
+
+
+				if(BevelPayload.IsHit())
+				{
+					float3 hit_P = TraceOrigin + (TraceDirection*BevelPayload.HitT);
+					float3 hit_N = GetNormal(BevelPayload.Barycentrics,BevelPayload.Indices);
+
+					float r = length(hit_P - TranslatedWorldPosition);
+					float pdf = bevel_cubic_eval(radius, r);
+					float disk_pdf = bevel_cubic_eval(radius, disk_r);
+					float w = pdf/disk_pdf;
+					w = pow(w,1.0/clamp(Roundness,0.0,1.0));
+					float d = dot(WorldNormal,hit_N);
+					if(d>(-0.999) && ((-d)>=(MaxAngle-0.01)))
+					{
+						sum_normal += (hit_N*w);
+						num_normals += 1;
+					}
+					else
+						sum_normal += WorldNormal;
+
+					float offset = Radius*0.05;
+					TraceOrigin = hit_P + TraceDirection*offset;
+					TraceLength -= BevelPayload.HitT;
+					if(TraceLength<offset)
+						break;
+				}
+				else
+					break;
+			}
+		}
+
+		RWBevelNormal[PixelCoord] = float4(num_normals>0?normalize(sum_normal):WorldNormal,num_normals);
+	}
+	else
+		RWBevelNormal[PixelCoord] = float4(0.0,0.0,0.0,-1.0);
+}
+
+
+RAY_TRACING_ENTRY_CLOSEST_HIT(BevelNormalCHS,
+	FBevelPayload, OutPayload,
+	FRayTracingIntersectionAttributes, Attributes)
+{
+	OutPayload.HitT = RayTCurrent();
+	OutPayload.Barycentrics = Attributes.GetBarycentrics();
+
+	uint IndexBufferOffsetInBytes = HitGroupSystemRootConstants.IndexBufferOffsetInBytes;
+	uint IndexBufferStride = HitGroupSystemRootConstants.GetIndexStride();
+	uint VertexStride = HitGroupSystemRootConstants.GetVertexStride();
+	uint VertexBufferOffsetInBytes = 0; 
+
+	const uint BaseIndex = PrimitiveIndex() * 3;
+
+	if (IndexBufferStride == 0)
+	{
+		OutPayload.Indices = uint3(BaseIndex, BaseIndex + 1, BaseIndex + 2);
+	}
+	else if (IndexBufferStride == 2)
+	{
+		OutPayload.Indices = LoadIndices16Bit(HitGroupSystemIndexBuffer, IndexBufferOffsetInBytes + BaseIndex * IndexBufferStride);
+	}
+	else
+	{
+		OutPayload.Indices = LoadIndices32Bit(HitGroupSystemIndexBuffer, IndexBufferOffsetInBytes + BaseIndex * IndexBufferStride);
+	}
+
+}
+
+
+RAY_TRACING_ENTRY_MISS(BevelNormalMS, FBevelPayload, Payload)
+{
+	Payload = (FBevelPayload)0;
+	Payload.SetMiss();
+}
+#endif
+
+Texture2D SignalInput;
+SamplerState InputSampler;
+RWTexture2D<float4> SignalOutput;
+
+
+float WorldDepthToPixelWorldRadius;
+[numthreads(8, 8, 1)]
+void SpatialAccumulationCS(uint2 PixelCoord : SV_DispatchThreadID)
+{
+	if(PixelCoord.x>=Resolution.x || PixelCoord.y>=Resolution.y)
+		return;
+
+	float3 WorldNormal = SceneNormalSRV.Load(int3(PixelCoord, 0)).xyz;
+	float4 BevelNormal = SignalInput.Load(int3(PixelCoord, 0));
+	if(BevelNormal.a < 1.0)
+	{
+		SignalOutput[PixelCoord] = float4(WorldNormal,1.0);
+		return;
+	}
+
+	float DeviceZ = DepthStencilSRV.Load(int3(PixelCoord, 0)).r;
+	float SceneDepth = DeviceZ2SceneDepth(DeviceZ);
+//	float WorldRadius = max(Radius,WorldDepthToPixelWorldRadius*SceneDepth+pow(1.0-DeviceZ,DeviceZ)*2.0);
+	float WorldRadius = max(Radius,WorldDepthToPixelWorldRadius*SceneDepth);
+	float3 WorldPos = ConstructTranslatedWorldPositionFromDeviceZ(PixelCoord, DeviceZ);
+
+	float3 sum_result = 0;
+	float num_samples = 0;
+	int KernelRadius = 2;
+	for (int y = -KernelRadius; y <= KernelRadius; y++)
+    {
+        for (int x = -KernelRadius; x <= KernelRadius; x++)
+        {
+			uint2 Id = PixelCoord+uint2(x,y);
+			Id.x = clamp(Id.x,0,Resolution.x-1);
+			Id.y = clamp(Id.y,0,Resolution.y-1);
+
+			float3 samplePos = ConstructTranslatedWorldPositionFromDeviceZ(Id, DepthStencilSRV.Load(int3(Id, 0)).r);
+			float dist = length(WorldPos - samplePos);
+			float dist_weight = step(dist,WorldRadius);
+
+			float3 sampleNormal = SignalInput.Load(int3(Id, 0));
+			float normal_weight = 0.5 + (0.5*pow(dot(sampleNormal,BevelNormal.xyz),2.0));
+
+			float weight = dist_weight*normal_weight;
+			sum_result += (sampleNormal*weight);
+			num_samples += weight;
+        }
+    }
+
+	float3 result = BevelNormal.xyz;
+	if(num_samples>0.0)
+	{
+		sum_result = normalize(sum_result/num_samples);
+		if(length(sum_result) > 0.0)
+			result = sum_result;
+	}		
+	
+	SignalOutput[PixelCoord] = float4(result,1.0);
+}
+
+
+
+
+
+void RenderBevelNormalVS
+(
+	in float3 Vertex : ATTRIBUTE0,
+	out float4 Output : SV_POSITION
+)
+{
+    float3 WorldPos = mul(float4(Vertex, 1.0), LocalToWorld).xyz;
+    Output = mul(float4(WorldPos, 1.0), VPMatrix);
+}
+
+float2 GetBilinearUV(float2 uv, float2 offset)
+{
+	uv = uv * float2(Resolution.x,Resolution.y) + offset;
+	float2 grid = frac(uv) - 0.5;
+    float2 result = ((uv - grid) - offset)/float2(Resolution.x,Resolution.y); 
+	return result;
+}
+
+
+Texture2D ModelBevel;
+SamplerState ModelBevelSampler;
+void RenderBevelNormalPS
+(
+	in FScreenVertexOutput Input,
+	out float4 Bevel : SV_Target0
+)
+{
+	Bevel = float4(Texture2DSampleLevel(ModelBevel, ModelBevelSampler, Input.UV, 0).xyz,1.0);
+}

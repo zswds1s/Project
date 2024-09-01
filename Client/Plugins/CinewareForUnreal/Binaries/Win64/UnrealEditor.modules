@@ -1,0 +1,10 @@
+{
+	"BuildId": "27405482",
+	"Modules": 
+	{
+		"CinewareAssetInstance": "UnrealEditor-CinewareAssetInstance.dll",
+		"CinewareAssetInstanceEditor": "UnrealEditor-CinewareAssetInstanceEditor.dll",
+		"CinewareAssetInstanceImport": "UnrealEditor-CinewareAssetInstanceImport.dll",
+		"DatasmithCinewareTranslator": "UnrealEditor-DatasmithCinewareTranslator.dll"
+	}
+}

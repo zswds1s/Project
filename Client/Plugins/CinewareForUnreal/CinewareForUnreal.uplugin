@@ -1,0 +1,79 @@
+{
+	"FileVersion": 3,
+	"Version": 15,
+	"VersionName": "2024.5.13",
+	"FriendlyName": "Cineware by Maxon",
+	"Description": "Improved Datasmith importer for C4D files (Cinema 4D 2024 installation required).",
+	"Category": "Editor",
+	"CreatedBy": "Maxon Computer GmbH",
+	"CreatedByURL": "https://maxon.net/unreal",
+	"DocsURL": "https://support.maxon.net/hc/articles/4411492995730-Cineware-for-Unreal",
+	"MarketplaceURL": "https://www.maxon.net/downloads/unreal",
+	"SupportURL": "https://support.maxon.net",
+	"EnabledByDefault": true,
+	"CanContainContent": true,
+	"IsBetaVersion": false,
+	"Installed": false,
+	"EngineVersion": "5.3.0",
+	"WhitelistPlatforms": [ "Win64", "Mac" ],
+	"Modules": [
+		{
+			"Name": "CinewareAssetInstance",
+			"Type": "Editor",
+			"LoadingPhase": "PostEngineInit",
+			"PlatformAllowList": [
+				"Win64",
+				"Mac"
+			]
+		},
+		{
+			"Name": "CinewareAssetInstanceEditor",
+			"Type": "Editor",
+			"LoadingPhase": "PostEngineInit",
+			"PlatformAllowList": [
+				"Win64",
+				"Mac"
+			]
+		},
+		{
+			"Name": "CinewareAssetInstanceImport",
+			"Type": "Editor",
+			"LoadingPhase": "PostEngineInit",
+			"PlatformAllowList": [
+				"Win64",
+				"Mac"
+			]
+		},
+		{
+			"Name": "DatasmithCinewareTranslator",
+			"Type": "Editor",
+			"LoadingPhase": "PostEngineInit",
+			"PlatformAllowList": [
+				"Win64",
+				"Mac"
+			]
+		}
+	],
+	"Plugins": [
+		{
+			"Name": "DatasmithContent",
+			"Enabled": true
+		},
+		{
+			"Name": "DatasmithImporter",
+			"Enabled": true
+		},
+		{
+			"Name": "EditorScriptingUtilities",
+			"Enabled": true
+		},
+		{
+			"Name": "GeometryCache",
+			"Enabled": true
+		},
+		{
+			"Name": "LevelSequenceEditor",
+			"Enabled": true
+		}
+	]
+}

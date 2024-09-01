@@ -1,0 +1,310 @@
+﻿#include "/Engine/Public/Platform.ush"
+#include "/Engine/Private/Common.ush"
+#if !COMPUTESHADER || PLATFORM_SUPPORTS_INLINE_RAY_TRACING
+#include "/Engine/Private/RayTracing/RayTracingCommon.ush"
+#include "/Engine/Private/RayTracing/RayTracingHitGroupCommon.ush"
+#endif
+#include "/Engine/Private/DeferredShadingCommon.ush"
+#include "/Engine/Private/SceneTextureParameters.ush"
+#include "/Engine/Private/SphericalGaussian.ush"
+#include "/Engine/Private/PathTracing/Utilities/PathTracingRandomSequence.ush"
+#include "/Engine/Private/MonteCarlo.ush"
+#include "/Engine/Private/TextureSampling.ush"
+  
+
+uint2 Resolution;
+Texture2D<float2> DepthStencil;
+Texture2D<float2> DepthStencilSRV;
+Texture2D<float4> SceneNormalSRV;
+Texture2D<float4> SceneVelocitySRV;//0.0~1.0
+float4x4 SVPositionToTranslatedWorld;
+float4 InvDeviceZToWorldZTransform;
+
+float3 ConstructTranslatedWorldPositionFromDeviceZ(uint2 PixelCoord, float DeviceZ)
+{
+	float4 TranslatedWorldPosition = mul(float4(PixelCoord + 0.5, DeviceZ, 1), SVPositionToTranslatedWorld);
+	TranslatedWorldPosition.xyz /= TranslatedWorldPosition.w;
+	return TranslatedWorldPosition.xyz;
+}
+
+float DeviceZ2SceneDepth(float DeviceZ)
+{
+	return DeviceZ * InvDeviceZToWorldZTransform.x + InvDeviceZToWorldZTransform.y + 1.0f / (DeviceZ * InvDeviceZToWorldZTransform.z - InvDeviceZToWorldZTransform.w);
+}
+
+
+RWTexture2D<float2> RWHitResult;
+
+uint FrameIndex;
+uint SamplesPerPixel;
+float Intensity;
+float MaxNormalBias;
+float MaxRayDistance;
+
+
+
+uint RandSeed(uint val0, uint val1)
+{
+  uint v0 = val0;
+  uint v1 = val1;
+  uint s0 = 0;
+
+  for(uint n = 0; n < 16; n++)
+  {
+    s0 += 0x9e3779b9;
+    v0 += ((v1 << 4) + 0xa341316c) ^ (v1 + s0) ^ ((v1 >> 5) + 0xc8013ea4);
+    v1 += ((v0 << 4) + 0xad90777d) ^ (v0 + s0) ^ ((v0 >> 5) + 0x7e95761e);
+  }
+
+  return v0;
+}
+
+void ComputeDefaultBasis(float3 normal, out float3 x, out float3 y, out float3 z)
+{
+	z              = normal;
+	const float yz = -z.y * z.z;
+	y = normalize(((abs(z.z) > 0.99999f) ? float3(-z.x * z.y, 1.0f - z.y * z.y, yz) : float3(-z.x * z.z, yz, 1.0f - z.z * z.z)));
+	
+	x = cross(y, z);
+}
+
+#if !COMPUTESHADER || PLATFORM_SUPPORTS_INLINE_RAY_TRACING
+RaytracingAccelerationStructure TLAS;
+RAY_TRACING_ENTRY_RAYGEN(ComputeAmbientOcclusionRGS)
+{
+	const uint2 PixelCoord = DispatchRaysIndex().xy;
+	const float DeviceZ = DepthStencilSRV.Load(int3(PixelCoord, 0)).r;
+
+	if (DeviceZ > 0.0)
+	{
+		const float SceneDepth = DeviceZ2SceneDepth(DeviceZ);
+		const float3 WorldNormal = SceneNormalSRV.Load(int3(PixelCoord, 0)).xyz;
+		const float3 TranslatedWorldPosition = ConstructTranslatedWorldPositionFromDeviceZ(PixelCoord, DeviceZ);
+
+		float3 GeometricNormal;
+		GeometricNormal = WorldNormal;
+
+		float3  x, y, z;
+		ComputeDefaultBasis(WorldNormal, x, y, z);
+
+		uint2 LaunchDimensions = DispatchRaysDimensions().xy;
+
+		float Occlusion = 0.0;
+		float ClosestRayHitDistance = MaxRayDistance;
+		for (uint SampleIndex = 0; SampleIndex < SamplesPerPixel; ++SampleIndex)
+		{
+			uint  Seed = RandSeed(LaunchDimensions.y * LaunchDimensions.x + LaunchDimensions.x, FrameIndex);
+
+			RandomSequence RandSequence;
+			RandomSequence_Initialize(RandSequence, PixelCoord, SampleIndex, Seed, SamplesPerPixel);
+		
+			float2 RandSample = RandomSequence_GenerateSample2D(RandSequence);
+			float3 Direction = TangentToWorld(CosineSampleHemisphere(RandSample).xyz, WorldNormal);
+			//Direction = normalize(Direction.x * x + Direction.y * y + Direction.z * z);
+
+			RayDesc Ray;
+			Ray.Origin = TranslatedWorldPosition + (WorldNormal*MaxNormalBias);
+			Ray.Direction = Direction;
+			Ray.TMin = 0.0;
+			Ray.TMax = MaxRayDistance;
+
+			FMinimalPayload MinimalPayload = (FMinimalPayload)0;
+			TraceRay(
+			TLAS,
+			RAY_FLAG_FORCE_OPAQUE | RAY_FLAG_ACCEPT_FIRST_HIT_AND_END_SEARCH | RAY_FLAG_SKIP_CLOSEST_HIT_SHADER,
+			RAY_TRACING_MASK_OPAQUE,
+			RAY_TRACING_SHADER_SLOT_SHADOW,
+			RAY_TRACING_NUM_SHADER_SLOTS,
+			0,
+			Ray,
+			MinimalPayload);
+
+			if (MinimalPayload.IsHit())
+			{
+				Occlusion += 1.0;
+				ClosestRayHitDistance = min(ClosestRayHitDistance, MinimalPayload.HitT);
+			}
+
+			Seed++;
+		}
+
+
+		Occlusion*=(1.0-(ClosestRayHitDistance/MaxRayDistance));
+		Occlusion = 1 - (Occlusion / SamplesPerPixel);
+		
+		Occlusion = pow(clamp(Occlusion, 0, 1), Intensity);
+		RWHitResult[PixelCoord] = float2(Occlusion,ClosestRayHitDistance);
+	}
+	else
+		RWHitResult[PixelCoord] = float2(0.0,0.0);
+}
+
+RAY_TRACING_ENTRY_CLOSEST_HIT(ComputeAmbientOcclusionCHS,
+	FMinimalPayload, Payload,
+	FRayTracingIntersectionAttributes, Attributes)
+{
+	Payload.HitT = RayTCurrent();
+}
+
+RAY_TRACING_ENTRY_MISS(ComputeAmbientOcclusionMS, FMinimalPayload, Payload)
+{
+	Payload.SetMiss();
+}
+#endif
+
+
+Texture2D SignalInput;
+uint DenoiseStrength;
+float3 Weights;
+RWTexture2D<float2> RWWaveletTransformDenoise;
+
+
+
+Texture2D PrevHistory;
+Texture2D HistoryRejection;
+RWTexture2D<float4> SignalOutput;
+
+RWTexture2D<float>AmbientOcclusionUAV;
+
+float WorldDepthToPixelWorldRadius;
+float4x4 ScreenToTranslatedWorld;
+
+struct FAOSampleSceneInfos
+{
+	float2 ScreenPosition;
+	float WorldDepth;
+	float3 WorldNormal;
+	float3 TranslatedWorldPosition;
+};
+
+float2 SceneUV2ScreenPos(float2 UV)
+{
+	return UV*2.0-1.0;
+	//return UV*float2(2.0,-2.0)+float2(-1.0,1.0);
+}
+
+
+float ComputeWorldBluringRadiusCausedByPixelSize(FAOSampleSceneInfos SceneMetadata)
+{
+	return WorldDepthToPixelWorldRadius * SceneMetadata.WorldDepth;
+}
+
+
+FAOSampleSceneInfos SampleRefSceneInfo(uint2 Coord, float DeviceZ)
+{
+	FAOSampleSceneInfos SampleSceneMetadata;
+	SampleSceneMetadata.WorldNormal = SceneNormalSRV.Load(uint3(Coord, 0)).xyz;
+	SampleSceneMetadata.WorldDepth = DeviceZ2SceneDepth(DeviceZ);
+	SampleSceneMetadata.TranslatedWorldPosition = ConstructTranslatedWorldPositionFromDeviceZ(Coord, DeviceZ);
+	return SampleSceneMetadata;
+}
+
+FAOSampleSceneInfos SampleSceneInfo(uint2 Coord, uint2 Offset, float DeviceZ )
+{
+	FAOSampleSceneInfos SampleSceneMetadata;
+	SampleSceneMetadata.ScreenPosition = SceneUV2ScreenPos(float2((Coord.x+Offset.x)/Resolution.x,Coord.y+Offset.y/Resolution.y));
+	SampleSceneMetadata.WorldNormal = SceneNormalSRV.Load(uint3(Coord, 0)).xyz;
+	SampleSceneMetadata.WorldDepth = DeviceZ2SceneDepth(DeviceZ);
+	SampleSceneMetadata.TranslatedWorldPosition = ConstructTranslatedWorldPositionFromDeviceZ(Coord, DeviceZ);
+	return SampleSceneMetadata;
+}
+
+
+float4 SceneBufferUVToScreenPosition;
+float2 DenoiserBufferUVToScreenPosition(float2 SceneBufferUV)
+{
+	return SceneBufferUV * SceneBufferUVToScreenPosition.xy + SceneBufferUVToScreenPosition.zw;
+}
+
+
+float AmendWorldBluringRadiusCausedByPixelSize(float WorldBluringDistance)
+{
+	float Multiplier = 1;
+	Multiplier *= 2;
+	Multiplier *= sqrt(2);
+	return WorldBluringDistance * Multiplier;
+}
+
+float3 ComputeVectorFromNeighborToRef(
+	FAOSampleSceneInfos RefSceneMetadata,
+	FAOSampleSceneInfos NeighborSceneMetadata)
+{
+	//return RefSceneMetadata.TranslatedWorldPosition - NeighborSceneMetadata.TranslatedWorldPosition;
+	float RefWorldDepth = RefSceneMetadata.WorldDepth;
+	float NeighborWorldDepth = NeighborSceneMetadata.WorldDepth;
+	
+	float2 RefScreenPos = RefSceneMetadata.ScreenPosition;
+	float3 RefClipPosition = float3(RefScreenPos * RefWorldDepth, RefWorldDepth);
+	
+	float2 NeighborScreenPos = NeighborSceneMetadata.ScreenPosition;
+	float3 NeighborClipPosition = float3(NeighborScreenPos * NeighborWorldDepth, NeighborWorldDepth);
+	
+	float3 NeighborToRefVector = mul(float4(RefClipPosition - NeighborClipPosition, 0), ScreenToTranslatedWorld).xyz;
+	
+	return NeighborToRefVector;
+}
+
+[numthreads(8, 8, 1)]
+void SpatialAccumulationCS(uint2 DispatchThreadId : SV_DispatchThreadID)
+{
+	if(DispatchThreadId.x>=Resolution.x || DispatchThreadId.y>=Resolution.y)
+		return;
+
+	float FinalAO = 0.0f;
+    float TotalWeight = 0.0f;
+
+	FAOSampleSceneInfos RefSceneMetadata = SampleRefSceneInfo(DispatchThreadId,DepthStencilSRV.Load(uint3(DispatchThreadId, 0)).r);
+	RefSceneMetadata.ScreenPosition = DenoiserBufferUVToScreenPosition(float2(DispatchThreadId.x+0.5,DispatchThreadId.y+0.5)/float2(Resolution.x,Resolution.y));
+
+	int KernelRadius = 3;
+	for (int x = -KernelRadius; x <= KernelRadius; ++x) 
+    {
+        for (int y = -KernelRadius; y <= KernelRadius; ++y) 
+        {
+			uint2 Id = DispatchThreadId+uint2(x,y);
+			Id.x = clamp(Id.x,0,Resolution.x-1);
+			Id.y = clamp(Id.y,0,Resolution.y-1);
+
+			FAOSampleSceneInfos SampleSceneMetadata = SampleRefSceneInfo(Id,DepthStencilSRV.Load(uint3(Id, 0)).r);
+			SampleSceneMetadata.ScreenPosition = DenoiserBufferUVToScreenPosition(float2(Id.x+0.5,Id.y+0.5)/float2(Resolution.x,Resolution.y));
+
+			float RefPixelWorldBluringRadius = WorldDepthToPixelWorldRadius * RefSceneMetadata.WorldDepth;
+			float SamplePixelWorldBluringRadius = WorldDepthToPixelWorldRadius * SampleSceneMetadata.WorldDepth;
+			float MaxWorldBluringDistance = AmendWorldBluringRadiusCausedByPixelSize(min(SamplePixelWorldBluringRadius, RefPixelWorldBluringRadius));
+
+			float3 NeighborToRefVector = ComputeVectorFromNeighborToRef(RefSceneMetadata,SampleSceneMetadata);
+			float InvMaxWorldBluringDistance = rcp(MaxWorldBluringDistance);
+			float PositionBilateralWeight = saturate(1 - dot(NeighborToRefVector, NeighborToRefVector) * rcp(MaxWorldBluringDistance * MaxWorldBluringDistance));
+
+			float NormalBilateralWeight = pow(max(dot(RefSceneMetadata.WorldNormal, SampleSceneMetadata.WorldNormal), 0), 4);
+
+			float DistFromRefPlane = abs(dot(RefSceneMetadata.WorldNormal, NeighborToRefVector));
+			float PlaneBilateralWeight = saturate(1 - DistFromRefPlane * InvMaxWorldBluringDistance);
+
+			float Weight = PositionBilateralWeight * NormalBilateralWeight * PlaneBilateralWeight;
+			if(x==0&&y==0)
+				Weight = 1.0;
+
+			const float2 RawSample = SignalInput.Load(uint3(Id,0)).xy;
+			float SampleCount = RawSample.g < 0 ? 0 : 1;
+
+			const float Occlusion = RawSample.r*SampleCount;
+
+            TotalWeight += Weight;
+            FinalAO += Occlusion * Weight;
+        }
+    }
+	
+	const float2 RawSample = SignalInput.Load(uint3(DispatchThreadId,0)).xy;
+	float SampleCount = RawSample.g < 0 ? 0 : 1;
+
+	float4 result;
+	result.r = (FinalAO/TotalWeight)*SampleCount;
+	result.g = SampleCount;
+	result.b = -1.0;
+	result.a = 1.0;
+	SignalOutput[DispatchThreadId] = result;
+}
+
+
+

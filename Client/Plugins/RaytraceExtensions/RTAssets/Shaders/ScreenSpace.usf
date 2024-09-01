@@ -1,0 +1,71 @@
+#include "/Engine/Public/Platform.ush"
+#include "/Engine/Private/Common.ush"
+ 
+float4x4 LocalToWorld;
+float4x4 LocalToWorldInverseTranspose;
+float4x4 VPMatrix;
+void DrawPrimitiveVS
+(
+	in float3 Vertex : ATTRIBUTE0,
+	HALF4_TYPE TangentX : ATTRIBUTE1,
+	HALF4_TYPE TangentZ : ATTRIBUTE2,	
+	out float3 OutNormal : TEXCOORD0,	
+	out float4 Output : SV_POSITION
+)
+{
+    float3 WorldPos = mul(float4(Vertex, 1.0), LocalToWorld).xyz;
+	OutNormal = normalize(mul(TangentZ.xyz, (float3x3)LocalToWorldInverseTranspose));
+    Output = mul(float4(WorldPos, 1.0), VPMatrix);
+}
+
+Buffer<SNORM float4> TangentBuffer;
+Buffer<SNORM float4> NormalBuffer;
+void DrawDynamicPrimitiveVS
+(
+	in float3 Vertex : ATTRIBUTE0,
+	in uint VertexId : SV_VertexID,
+	out float3 OutNormal : TEXCOORD0,	
+	out float4 Output : SV_POSITION
+)
+{
+    float3 WorldPos = mul(float4(Vertex, 1.0), LocalToWorld).xyz;
+	OutNormal = normalize(mul(NormalBuffer[VertexId].xyz, (float3x3)LocalToWorldInverseTranspose));
+    Output = mul(float4(WorldPos, 1.0), VPMatrix);
+}
+
+void DrawPrimitivePS
+(
+	in float3 Normal : TEXCOORD0,
+	in float4 SVPosition : SV_POSITION,
+	out float4 OutNormal : SV_Target0
+)
+{
+    OutNormal = float4(Normal,1.0);
+}
+
+
+
+Texture2D AmbientOcclusion;
+SamplerState AmbientOcclusionSampler;
+
+void RenderRTAmbientOcclusionPS
+(
+	in FScreenVertexOutput Input,
+	out float4 OutColor : SV_Target0
+)
+{
+    float AO = Texture2DSampleLevel(AmbientOcclusion, AmbientOcclusionSampler, Input.UV, 0).r;
+	OutColor = float4(AO,AO,AO,1.0);
+}
+
+
+Texture2D ModelBevel;
+SamplerState ModelBevelSampler;
+void RenderBevelNormalPS
+(
+	in FScreenVertexOutput Input,
+	out float4 Bevel : SV_Target0
+)
+{
+	Bevel = float4(Texture2DSampleLevel(ModelBevel, ModelBevelSampler, Input.UV, 0).xyz,1.0);
+}
