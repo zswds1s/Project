@@ -1,0 +1,33 @@
+{
+    "Version": "1.2",
+    "Data": {
+        "Source": "e:\\unreal projects\\wargame\\plugins\\gameplaymessagerouter\\intermediate\\build\\win64\\x64\\unrealgame\\development\\gameplaymessageruntime\\module.gameplaymessageruntime.cpp",
+        "ProvidedModule": "",
+        "PCH": "e:\\unreal projects\\wargame\\intermediate\\build\\win64\\x64\\wargame\\development\\engine\\sharedpch.engine.cpp20.h.pch",
+        "Includes": [
+            "e:\\unreal projects\\wargame\\plugins\\gameplaymessagerouter\\intermediate\\build\\win64\\x64\\unrealgame\\development\\gameplaymessageruntime\\definitions.gameplaymessageruntime.h",
+            "e:\\unreal projects\\wargame\\plugins\\gameplaymessagerouter\\intermediate\\build\\win64\\unrealgame\\inc\\gameplaymessageruntime\\uht\\gameplaymessageruntime.init.gen.cpp",
+            "e:\\unreal projects\\wargame\\plugins\\gameplaymessagerouter\\intermediate\\build\\win64\\unrealgame\\inc\\gameplaymessageruntime\\uht\\gameplaymessagetypes2.gen.cpp",
+            "e:\\unreal projects\\wargame\\plugins\\gameplaymessagerouter\\source\\gameplaymessageruntime\\public\\gameframework\\gameplaymessagetypes2.h",
+            "d:\\program files\\epic games\\ue_5.3\\engine\\source\\runtime\\gameplaytags\\classes\\gameplaytagcontainer.h",
+            "d:\\program files\\epic games\\ue_5.3\\engine\\source\\runtime\\core\\public\\misc\\comparisonutility.h",
+            "d:\\program files\\epic games\\ue_5.3\\engine\\intermediate\\build\\win64\\unrealgame\\inc\\gameplaytags\\uht\\gameplaytagcontainer.generated.h",
+            "e:\\unreal projects\\wargame\\plugins\\gameplaymessagerouter\\intermediate\\build\\win64\\unrealgame\\inc\\gameplaymessageruntime\\uht\\gameplaymessagetypes2.generated.h",
+            "e:\\unreal projects\\wargame\\plugins\\gameplaymessagerouter\\source\\gameplaymessageruntime\\private\\gameframework\\asyncaction_listenforgameplaymessage.cpp",
+            "e:\\unreal projects\\wargame\\plugins\\gameplaymessagerouter\\source\\gameplaymessageruntime\\public\\gameframework\\asyncaction_listenforgameplaymessage.h",
+            "d:\\program files\\epic games\\ue_5.3\\engine\\source\\runtime\\engine\\classes\\engine\\cancellableasyncaction.h",
+            "d:\\program files\\epic games\\ue_5.3\\engine\\source\\runtime\\engine\\classes\\kismet\\blueprintasyncactionbase.h",
+            "d:\\program files\\epic games\\ue_5.3\\engine\\intermediate\\build\\win64\\unrealgame\\inc\\engine\\uht\\blueprintasyncactionbase.generated.h",
+            "d:\\program files\\epic games\\ue_5.3\\engine\\intermediate\\build\\win64\\unrealgame\\inc\\engine\\uht\\cancellableasyncaction.generated.h",
+            "e:\\unreal projects\\wargame\\plugins\\gameplaymessagerouter\\source\\gameplaymessageruntime\\public\\gameframework\\gameplaymessagesubsystem.h",
+            "e:\\unreal projects\\wargame\\plugins\\gameplaymessagerouter\\intermediate\\build\\win64\\unrealgame\\inc\\gameplaymessageruntime\\uht\\gameplaymessagesubsystem.generated.h",
+            "e:\\unreal projects\\wargame\\plugins\\gameplaymessagerouter\\intermediate\\build\\win64\\unrealgame\\inc\\gameplaymessageruntime\\uht\\asyncaction_listenforgameplaymessage.generated.h",
+            "e:\\unreal projects\\wargame\\plugins\\gameplaymessagerouter\\intermediate\\build\\win64\\unrealgame\\inc\\gameplaymessageruntime\\uht\\asyncaction_listenforgameplaymessage.gen.cpp",
+            "e:\\unreal projects\\wargame\\plugins\\gameplaymessagerouter\\source\\gameplaymessageruntime\\private\\gameframework\\gameplaymessageruntime.cpp",
+            "e:\\unreal projects\\wargame\\plugins\\gameplaymessagerouter\\source\\gameplaymessageruntime\\private\\gameframework\\gameplaymessagesubsystem.cpp",
+            "e:\\unreal projects\\wargame\\plugins\\gameplaymessagerouter\\intermediate\\build\\win64\\unrealgame\\inc\\gameplaymessageruntime\\uht\\gameplaymessagesubsystem.gen.cpp"
+        ],
+        "ImportedModules": [],
+        "ImportedHeaderUnits": []
+    }
+}
