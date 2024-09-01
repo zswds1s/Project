@@ -1,11 +1,11 @@
-"E:\Unreal Projects\WarGame\Plugins\GameplayMessageRouter\Intermediate\Build\Win64\x64\UnrealEditor\Development\GameplayMessageNodes\Module.GameplayMessageNodes.cpp"
-/FI"E:\Unreal Projects\WarGame\Intermediate\Build\Win64\x64\WarGameEditor\Development\UnrealEd\SharedPCH.UnrealEd.Cpp20.h"
-/FI"E:\Unreal Projects\WarGame\Plugins\GameplayMessageRouter\Intermediate\Build\Win64\x64\UnrealEditor\Development\GameplayMessageNodes\Definitions.GameplayMessageNodes.h"
-/Yu"E:\Unreal Projects\WarGame\Intermediate\Build\Win64\x64\WarGameEditor\Development\UnrealEd\SharedPCH.UnrealEd.Cpp20.h"
-/Fp"E:\Unreal Projects\WarGame\Intermediate\Build\Win64\x64\WarGameEditor\Development\UnrealEd\SharedPCH.UnrealEd.Cpp20.h.pch"
-/Fo"E:\Unreal Projects\WarGame\Plugins\GameplayMessageRouter\Intermediate\Build\Win64\x64\UnrealEditor\Development\GameplayMessageNodes\Module.GameplayMessageNodes.cpp.obj"
-/sourceDependencies "E:\Unreal Projects\WarGame\Plugins\GameplayMessageRouter\Intermediate\Build\Win64\x64\UnrealEditor\Development\GameplayMessageNodes\Module.GameplayMessageNodes.cpp.dep.json"
-@"E:\Unreal Projects\WarGame\Plugins\GameplayMessageRouter\Intermediate\Build\Win64\x64\UnrealEditor\Development\GameplayMessageNodes\GameplayMessageNodes.Shared.rsp"
+"E:\GitHub\Project\Client\Plugins\GameplayMessageRouter\Intermediate\Build\Win64\x64\UnrealEditor\Development\GameplayMessageNodes\Module.GameplayMessageNodes.cpp"
+/FI"E:\GitHub\Project\Client\Intermediate\Build\Win64\x64\ClientEditor\Development\UnrealEd\SharedPCH.UnrealEd.Cpp20.h"
+/FI"E:\GitHub\Project\Client\Plugins\GameplayMessageRouter\Intermediate\Build\Win64\x64\UnrealEditor\Development\GameplayMessageNodes\Definitions.GameplayMessageNodes.h"
+/Yu"E:\GitHub\Project\Client\Intermediate\Build\Win64\x64\ClientEditor\Development\UnrealEd\SharedPCH.UnrealEd.Cpp20.h"
+/Fp"E:\GitHub\Project\Client\Intermediate\Build\Win64\x64\ClientEditor\Development\UnrealEd\SharedPCH.UnrealEd.Cpp20.h.pch"
+/Fo"E:\GitHub\Project\Client\Plugins\GameplayMessageRouter\Intermediate\Build\Win64\x64\UnrealEditor\Development\GameplayMessageNodes\Module.GameplayMessageNodes.cpp.obj"
+/sourceDependencies "E:\GitHub\Project\Client\Plugins\GameplayMessageRouter\Intermediate\Build\Win64\x64\UnrealEditor\Development\GameplayMessageNodes\Module.GameplayMessageNodes.cpp.dep.json"
+@"E:\GitHub\Project\Client\Plugins\GameplayMessageRouter\Intermediate\Build\Win64\x64\UnrealEditor\Development\GameplayMessageNodes\GameplayMessageNodes.Shared.rsp"
 /Zc:inline
 /nologo
 /Oi

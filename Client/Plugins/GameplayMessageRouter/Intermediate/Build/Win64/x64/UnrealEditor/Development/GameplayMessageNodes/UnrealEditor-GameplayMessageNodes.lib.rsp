@@ -6,7 +6,7 @@
 /NAME:"UnrealEditor-GameplayMessageNodes.dll"
 /IGNORE:4221
 /NODEFAULTLIB
-"E:\Unreal Projects\WarGame\Intermediate\Build\Win64\x64\WarGameEditor\Development\UnrealEd\SharedPCH.UnrealEd.Cpp20.h.obj"
-"E:\Unreal Projects\WarGame\Plugins\GameplayMessageRouter\Intermediate\Build\Win64\x64\UnrealEditor\Development\GameplayMessageNodes\Module.GameplayMessageNodes.cpp.obj"
-"E:\Unreal Projects\WarGame\Plugins\GameplayMessageRouter\Intermediate\Build\Win64\x64\UnrealEditor\Development\GameplayMessageNodes\Default.rc2.res"
-/OUT:"E:\Unreal Projects\WarGame\Plugins\GameplayMessageRouter\Intermediate\Build\Win64\x64\UnrealEditor\Development\GameplayMessageNodes\UnrealEditor-GameplayMessageNodes.lib"
+"E:\GitHub\Project\Client\Intermediate\Build\Win64\x64\ClientEditor\Development\UnrealEd\SharedPCH.UnrealEd.Cpp20.h.obj"
+"E:\GitHub\Project\Client\Plugins\GameplayMessageRouter\Intermediate\Build\Win64\x64\UnrealEditor\Development\GameplayMessageNodes\Module.GameplayMessageNodes.cpp.obj"
+"E:\GitHub\Project\Client\Plugins\GameplayMessageRouter\Intermediate\Build\Win64\x64\UnrealEditor\Development\GameplayMessageNodes\Default.rc2.res"
+/OUT:"E:\GitHub\Project\Client\Plugins\GameplayMessageRouter\Intermediate\Build\Win64\x64\UnrealEditor\Development\GameplayMessageNodes\UnrealEditor-GameplayMessageNodes.lib"

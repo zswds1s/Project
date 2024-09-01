@@ -34,9 +34,9 @@
 /NODEFAULTLIB:"LIBCD"
 /NODEFAULTLIB:"LIBCPD"
 /FUNCTIONPADMIN:6
-"E:\Unreal Projects\WarGame\Intermediate\Build\Win64\x64\WarGameEditor\Development\Engine\SharedPCH.Engine.Cpp20.h.obj"
-"E:\Unreal Projects\WarGame\Plugins\GameplayMessageRouter\Intermediate\Build\Win64\x64\UnrealEditor\Development\GameplayMessageRuntime\Module.GameplayMessageRuntime.cpp.obj"
-"E:\Unreal Projects\WarGame\Plugins\GameplayMessageRouter\Intermediate\Build\Win64\x64\UnrealEditor\Development\GameplayMessageRuntime\Default.rc2.res"
+"E:\GitHub\Project\Client\Intermediate\Build\Win64\x64\ClientEditor\Development\Engine\SharedPCH.Engine.Cpp20.h.obj"
+"E:\GitHub\Project\Client\Plugins\GameplayMessageRouter\Intermediate\Build\Win64\x64\UnrealEditor\Development\GameplayMessageRuntime\Module.GameplayMessageRuntime.cpp.obj"
+"E:\GitHub\Project\Client\Plugins\GameplayMessageRouter\Intermediate\Build\Win64\x64\UnrealEditor\Development\GameplayMessageRuntime\Default.rc2.res"
 "..\Intermediate\Build\Win64\x64\UnrealEditor\Development\CoreUObject\UnrealEditor-CoreUObject.lib"
 "..\Intermediate\Build\Win64\x64\UnrealEditor\Development\Core\UnrealEditor-Core.lib"
 "..\Intermediate\Build\Win64\x64\UnrealEditor\Development\Engine\UnrealEditor-Engine.lib"
@@ -66,7 +66,7 @@
 "synchronization.lib"
 "dwmapi.lib"
 "imm32.lib"
-/OUT:"E:\Unreal Projects\WarGame\Plugins\GameplayMessageRouter\Binaries\Win64\UnrealEditor-GameplayMessageRuntime.dll"
-/IMPLIB:"E:\Unreal Projects\WarGame\Plugins\GameplayMessageRouter\Intermediate\Build\Win64\x64\UnrealEditor\Development\GameplayMessageRuntime\UnrealEditor-GameplayMessageRuntime.sup.lib"
-/PDB:"E:\Unreal Projects\WarGame\Plugins\GameplayMessageRouter\Binaries\Win64\UnrealEditor-GameplayMessageRuntime.pdb"
+/OUT:"E:\GitHub\Project\Client\Plugins\GameplayMessageRouter\Binaries\Win64\UnrealEditor-GameplayMessageRuntime.dll"
+/IMPLIB:"E:\GitHub\Project\Client\Plugins\GameplayMessageRouter\Intermediate\Build\Win64\x64\UnrealEditor\Development\GameplayMessageRuntime\UnrealEditor-GameplayMessageRuntime.sup.lib"
+/PDB:"E:\GitHub\Project\Client\Plugins\GameplayMessageRouter\Binaries\Win64\UnrealEditor-GameplayMessageRuntime.pdb"
 /ignore:4078

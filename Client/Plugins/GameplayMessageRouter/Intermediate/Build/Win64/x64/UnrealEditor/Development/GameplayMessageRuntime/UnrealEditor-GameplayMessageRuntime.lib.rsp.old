@@ -1,0 +1,12 @@
+/NOLOGO
+/errorReport:prompt
+/MACHINE:x64
+/SUBSYSTEM:WINDOWS
+/DEF
+/NAME:"UnrealEditor-GameplayMessageRuntime.dll"
+/IGNORE:4221
+/NODEFAULTLIB
+"E:\Unreal Projects\WarGame\Intermediate\Build\Win64\x64\WarGameEditor\Development\Engine\SharedPCH.Engine.Cpp20.h.obj"
+"E:\Unreal Projects\WarGame\Plugins\GameplayMessageRouter\Intermediate\Build\Win64\x64\UnrealEditor\Development\GameplayMessageRuntime\Module.GameplayMessageRuntime.cpp.obj"
+"E:\Unreal Projects\WarGame\Plugins\GameplayMessageRouter\Intermediate\Build\Win64\x64\UnrealEditor\Development\GameplayMessageRuntime\Default.rc2.res"
+/OUT:"E:\Unreal Projects\WarGame\Plugins\GameplayMessageRouter\Intermediate\Build\Win64\x64\UnrealEditor\Development\GameplayMessageRuntime\UnrealEditor-GameplayMessageRuntime.lib"
